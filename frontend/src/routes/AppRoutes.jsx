@@ -18,6 +18,9 @@ import AboutPage from "../pages/public/AboutPage";
 import ContactPage from "../pages/public/ContactPage";
 import ResourcesManagement from "../pages/admin/ResourcesManagement";
 import StudentDashboard from "../pages/student/StudentDashboard";
+import StudentProfilePage from "../pages/student/StudentProfilePage";
+
+
 function AppRoutes(props) {
   return (
     <Routes>
@@ -37,6 +40,7 @@ function AppRoutes(props) {
           <Route path="resources" element={<ResourcesManagement />} />
         </Route>
       </Route>
+
       {/* Nhóm các route cho Tutor */}
       <Route element={<ProtectedRoute allowedRoles={["tutor"]} />}>
         <Route path="/tutor" element={<Layout />}>
@@ -46,10 +50,12 @@ function AppRoutes(props) {
           <Route path="class" element={<ClassPage />} />
         </Route>
       </Route>
+      
       {/* Nhóm các route cho Student */}
       <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
         <Route path="/student" element={<Layout />}>
           <Route path="dashboard" element={<StudentDashboard />} />
+          <Route path="profile" element={<StudentProfilePage />} />
         </Route>
       </Route>
       {/* Route bắt các đường dẫn không hợp lệ (404 Not Found) */}

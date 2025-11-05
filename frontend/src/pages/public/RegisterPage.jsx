@@ -27,7 +27,7 @@ import {
     VisibilityOff,
     Person,
 } from "@mui/icons-material";
-import AppSnackbar from '../../components/Snackbar'; 
+import AppSnackbar from '../../components/SnackBar'; 
 
 const PageWrapper = styled(Box)(({ theme }) => ({
     minHeight: "100vh",
