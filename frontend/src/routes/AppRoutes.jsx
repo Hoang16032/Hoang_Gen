@@ -25,6 +25,9 @@ import StudentClassDetailPage from '../pages/student/StudentClassDetailPage';
 import StudentThreadDetailPage from '../pages/student/StudentThreadDetailPage';
 import StudentPracticePage from '../pages/student/StudentPracticePage';
 import StudentPracticeSessionPage from '../pages/student/StudentPracticeSessionPage';
+import StudentHomeworkPage from '../pages/student/StudentHomeworkPage';
+import StudentExamSessionPage from '../pages/student/StudentExamSessionPage';
+import StudentExamReviewPage from '../pages/student/StudentExamReviewPage'; 
 
 function AppRoutes(props) {
   return (
@@ -66,6 +69,9 @@ function AppRoutes(props) {
           <Route path="myclass/:classId/:threadId" element={<StudentThreadDetailPage />} />  
           <Route path="practice" element={<StudentPracticePage />} />
           <Route path="practice/:categoryId/session" element={<StudentPracticeSessionPage />} />
+          <Route path="homework" element={<StudentHomeworkPage />} /> 
+          <Route path="exam/:sessionId" element={<StudentExamSessionPage />} /> 
+          <Route path="exam/review/:sessionId" element={<StudentExamReviewPage />} />
 
         </Route>
       </Route>
