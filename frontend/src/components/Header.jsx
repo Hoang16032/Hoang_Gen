@@ -74,7 +74,7 @@ const BrandBox = styled(Box)(({ theme }) => ({
 const USER_MENU_CONFIG = [
   {
     text: "Hồ sơ",
-    path: "/student/profile",
+    path: "/profile",
     icon: <PersonOutlineIcon fontSize="small" />,
   },
   {

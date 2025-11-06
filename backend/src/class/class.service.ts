@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import {ClassDto, ScheduleDto} from './dto/class.dto';
 import { google } from 'googleapis';
 import { addDays, isBefore, setDate, setHours, setMinutes } from 'date-fns';
+import { ClassStatus } from '@prisma/client';
 require('dotenv').config()
 
 @Injectable()
@@ -22,6 +23,7 @@ export class ClassService {
                 subject: data.subject,
                 createdAt: new Date(),
                 updateAt: new Date(),
+                startat: data.startAt || null,
                 tutor: { connect: { uid: tutor_uid } },
             },
         });
@@ -30,9 +32,11 @@ export class ClassService {
   }
 
   async getAllClasses(page?: number, limit?: number, search?: string, status?: string, startAt?: Date, endAt?: Date) {
-    const skip:number = (page - 1) * limit;
+    const _page: number = Number(page) && Number(page) > 0 ? Number(page) : 1;
+    const _limit: number = Number(limit) && Number(limit) > 0 ? Number(limit) : 10;
+    const skip:number = (_page - 1) * _limit;
     const where: any = {};
-    if (status) where.status = status;
+    if (status) where.status = status as ClassStatus;
     if (startAt && endAt) {
         where.startAt = { gte: startAt, lte: endAt };
     } else if (startAt) {
@@ -50,7 +54,7 @@ export class ClassService {
     return this.prisma.class.findMany({
       where,
       skip,
-      take: limit,
+      take: _limit,
       orderBy: { createdAt: 'desc' },
       select:{
         class_id: true,
@@ -79,11 +83,14 @@ export class ClassService {
         class_id: true,
         classname: true,
         description: true,
+        status: true,
+        nb_of_student: true,
         tutor:{
           select:{ user:{
             select:{
               uid: true,
               fname: true,
+              mname: true,
               lname: true,
               username: true,
             }
@@ -95,26 +102,54 @@ export class ClassService {
   }
 
   async getDetailedClass(class_id: string) {
-    return this.prisma.class.findMany({
-      where: { class_id: class_id } ,
-      orderBy: { createdAt: 'desc' },
-      select:{
+    const classDetails = await this.prisma.class.findUnique({
+      where: { class_id: class_id },
+      
+      select: {
         class_id: true,
         classname: true,
         description: true,
-        tutor:{
-          select:{ user:{
-            select:{
-              uid: true,
-              fname: true,
-              lname: true,
-              username: true,
+        grade: true,      
+        subject: true,    
+        status: true,      
+        nb_of_student: true,
+        createdAt: true,  
+        startat: true,   
+
+        tutor: { 
+          select: {
+            user: {
+              select: {
+                uid: true,
+                fname: true,
+                mname: true,
+                lname: true,
+                username: true,
+              }
             }
           }
+        },
+        learning: {
+          select: {
+            student: {
+              select: {
+                uid: true,
+                user: {
+                  select: {
+                    fname: true,
+                    mname: true,
+                    lname: true,
+                    email: true,
+                    avata_url: true 
+                  }
+                }
+              }
+            }
           }
         }
-      },
+      }
     });
+    return classDetails;
   }
 
   async enrollClass(class_id: string, student_uid: string) {
@@ -242,7 +277,7 @@ export class ScheduleService {
     })
   }
 
-  async deleteSchedule(class_id: string, mode:boolean = false, schedules?: number[]){
+  async deleteSchedule(class_id: string, mode: boolean = false, schedules?: number[]){
     return this.prisma.$transaction(async(tx) => {
       if (mode) {
         await tx.schedule.deleteMany({
@@ -293,6 +328,7 @@ export class ScheduleService {
         }
       }
     })
+
     const grouped = Object.values(
       sched.reduce((acc, item) => {
         const classId = item.class.class_id;
@@ -315,6 +351,7 @@ export class ScheduleService {
         return acc;
       }, {})
     );
+
     return grouped
   }
   

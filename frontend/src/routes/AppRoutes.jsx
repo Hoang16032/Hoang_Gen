@@ -17,18 +17,8 @@ import UserManagement from "../pages/admin/UserManagement";
 import AboutPage from "../pages/public/AboutPage";
 import ContactPage from "../pages/public/ContactPage";
 import ResourcesManagement from "../pages/admin/ResourcesManagement";
-
 import StudentDashboard from "../pages/student/StudentDashboard";
-import StudentProfilePage from "../pages/student/StudentProfilePage";
-import StudentMyClassPage from '../pages/student/StudentMyClassPage';
-import StudentClassDetailPage from '../pages/student/StudentClassDetailPage';
-import StudentThreadDetailPage from '../pages/student/StudentThreadDetailPage';
-// import StudentPracticePage from '../pages/student/StudentPracticePage';
-// import StudentPracticeSessionPage from '../pages/student/StudentPracticeSessionPage';
-// import StudentHomeworkPage from '../pages/student/StudentHomeworkPage';
-// import StudentExamSessionPage from '../pages/student/StudentExamSessionPage';
-// import StudentExamReviewPage from '../pages/student/StudentExamReviewPage'; 
-
+import ClassDetailPage from "../pages/tutor/ClassDetailPage";
 function AppRoutes(props) {
   return (
     <Routes>
@@ -48,31 +38,20 @@ function AppRoutes(props) {
           <Route path="resources" element={<ResourcesManagement />} />
         </Route>
       </Route>
-
       {/* Nhóm các route cho Tutor */}
       <Route element={<ProtectedRoute allowedRoles={["tutor"]} />}>
         <Route path="/tutor" element={<Layout />}>
           <Route path="dashboard" element={<TutorDashboard />} />
           <Route path="question" element={<QuestionPage />} />
           <Route path="new" element={<NewQuestion />} />
-          <Route path="class" element={<ClassPage />} />
+          <Route path="classes" element={<ClassPage />} />
+          <Route path="classes/:classId" element={<ClassDetailPage />} />
         </Route>
       </Route>
-
       {/* Nhóm các route cho Student */}
       <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
         <Route path="/student" element={<Layout />}>
           <Route path="dashboard" element={<StudentDashboard />} />
-          <Route path="profile" element={<StudentProfilePage />} />
-          <Route path="myclass" element={<StudentMyClassPage />} />
-          <Route path="myclass/:classId" element={<StudentClassDetailPage />} />
-          <Route path="myclass/:classId/:threadId" element={<StudentThreadDetailPage />} />  
-          {/* <Route path="practice" element={<StudentPracticePage />} />
-          <Route path="practice/:categoryId/session" element={<StudentPracticeSessionPage />} />
-          <Route path="homework" element={<StudentHomeworkPage />} /> 
-          <Route path="exam/:sessionId" element={<StudentExamSessionPage />} /> 
-          <Route path="exam/review/:sessionId" element={<StudentExamReviewPage />} /> */}
-
         </Route>
       </Route>
       {/* Route bắt các đường dẫn không hợp lệ (404 Not Found) */}

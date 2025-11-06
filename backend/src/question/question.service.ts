@@ -1,12 +1,20 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { 
+    BadRequestException, 
+    Injectable, 
+    InternalServerErrorException, 
+    NotFoundException 
+} from '@nestjs/common';
+import { ExceptionResponse } from 'src/exception/Exception.exception';
+import { ControlMode } from 'src/mode/control.mode';
 import { PrismaService } from '../prisma/prisma.service';
 import { BookDto, CategoryDto } from './dto/question.dto'; 
 import { CreateQuestionDto, CreateAnswerDto } from './dto/create-question.dto';
 import { UpdateQuestionDto } from './dto/update-question.dto';
+import { CategoriesOutputDto } from './dto/questionOutput.dto';
 import { DifficultyLevel, QuestionStatus, QuestionType, Prisma } from '@prisma/client';
 
 @Injectable()
-export class QuestionService {
+export class BookService {
     constructor(private prisma: PrismaService) {}
 
     async createBook(data: BookDto[]) {
@@ -36,33 +44,114 @@ export class QuestionService {
         });
     }
 
-    async createCategory(book_id: string, data: CategoryDto[]) {
-        const bookExists = await this.prisma.books.findUnique({ where: { book_id } });
-        if (!bookExists) {
+    async getBookById(book_id: string) {
+        const book = await this.prisma.books.findUnique({
+            where: { book_id },
+        });
+        if (!book) {
             throw new NotFoundException(`Book with ID ${book_id} not found`);
         }
-        const createdCategories = [];
-        for (const category of data) {
-             const existingCategory = await this.prisma.categories.findFirst({ where: { category_name: category.category_name, book_id: book_id } });
-             if (existingCategory) {
-                 console.warn(`Category "${category.category_name}" already exists in book ${book_id}. Skipping creation.`);
-                 continue;
-             }
-            const newCategory = await this.prisma.categories.create({
-                data: {
-                    category_name: category.category_name,
-                    description: category.description,
-                    Books: { connect: { book_id } }
-                },
-            });
-            createdCategories.push(newCategory);
-        }
-        return createdCategories;
+        return book;
     }
 
-    async getAllCategories(book_id?: string, page?: number | string, limit?: number | string, search?: string, grade?: number | string, subject?: string) {
+    async updateBook(book_id: string, data: Partial<BookDto>) {
+        try {
+            return await this.prisma.books.update({
+                where: { book_id },
+                data,
+            });
+        } catch (error) {
+            return new ExceptionResponse().returnError(error, `book ${book_id}`);
+        }
+    }
+
+    async deleteBook(book_id: string, mode: ControlMode = ControlMode.SOFT) {
+        try {
+            if (mode == ControlMode.FORCE) {
+                return this.prisma.$transaction(async (tx) => {
+                    await tx.categories.deleteMany({ where: { book_id }});
+                    return await tx.books.delete({ where: { book_id } });
+                });
+            }
+            return await this.prisma.books.delete({
+                where: { book_id },
+            });
+        } catch (error) {
+            return new ExceptionResponse().returnError(error, `book ${book_id}`);
+        }
+    }
+}
+
+@Injectable()
+export class CategoryService {
+    constructor(private prisma: PrismaService) {}
+    async upsertCategoryWithChildren(tx: Prisma.TransactionClient, categoryData: CategoryDto, parentId: string | null = null) {
+        const existingCategory = await tx.categories.findUnique({
+            where: {
+                category_name: categoryData.category_name,
+                book_id: categoryData.book_id,
+            },
+        });
+
+        const categoryDataForCreate = {
+                category_name: categoryData.category_name,
+                description: categoryData.description,
+                Books: {
+                connect: { book_id: categoryData.book_id },
+            },
+            ...(parentId ? { Categories: { connect: { category_id: parentId } } } : {}),
+        };
+
+        const category = existingCategory ? existingCategory : await tx.categories.create({
+            data: categoryDataForCreate,
+        });
+
+        if (categoryData.children?.length) {
+            for (const child of categoryData.children) {
+                await this.upsertCategoryWithChildren(tx, child, category.category_id);
+            }
+        }
+    }
+
+    async createCategory(data: CategoryDto[]) {
+        // console.log("Creating categories with data:", data);
+        // console.log("Data type:", typeof data);
+        try {
+            return this.prisma.$transaction(async (tx) => {
+                for (const category of data) {
+                    await this.upsertCategoryWithChildren(tx, category);
+                }
+                return data;
+            });
+        } catch (error) {
+            return new ExceptionResponse().returnError(error, `categories`);
+        }
+    }
+
+    getRecursiveCategory(current: CategoriesOutputDto, all: CategoriesOutputDto[]) {
+        const result: CategoriesOutputDto = current
+        const filteredChildren = all.filter(child => child.parent_id === current.category_id);
+        for (const child of filteredChildren) {
+            result.children.push(this.getRecursiveCategory(child, all));
+        }
+        return result;
+    }
+
+    flattenCategories(categories: CategoriesOutputDto[]): CategoriesOutputDto[] {
+        const result: CategoriesOutputDto[] = [];
+        for (const category of categories) {
+            const {children, ...rest} = category;
+            result.push({...rest, children: []});
+            if (children && children.length > 0) {
+                result.push(...this.flattenCategories(children));
+            }
+        }
+        return result;
+    }
+
+    async getAllCategories(mode: string = 'tree', book_id?: string, page?: number | string, limit?: number | string, search?: string, grade?: number | string, subject?: string) {
         const pageNum = page ? parseInt(String(page), 10) : 1;
-        const limitNum = limit !== undefined ? parseInt(String(limit), 10) : 20; // Default limit 20
+        const limitNum = limit !== undefined ? parseInt(String(limit), 10) : 200;  
         const skipNum = limitNum > 0 ? (pageNum - 1) * limitNum : 0;
         const takeNum = limitNum > 0 ? limitNum : undefined;
 
@@ -85,12 +174,83 @@ export class QuestionService {
         }
 
         const categories = await this.prisma.categories.findMany({
-            where, skip: skipNum, take: takeNum, orderBy: { category_name: 'asc' },
-            select: { category_id: true, category_name: true, description: true, Books: { select: { book_id: true, title: true, subject: true, grade: true } } },
+            where,
+            skip: skipNum,
+            take: takeNum,
+            select: {
+                category_id: true,
+                category_name: true,
+                description: true,
+                parent_id: true,
+                Books: { select: { book_id: true, title: true, subject: true, grade: true } },
+            },
+            orderBy: { category_name: 'asc' },
         });
+
+        const categoriesOutput: CategoriesOutputDto[] = categories
+                                .map(cat => ({
+                                    category_id: cat.category_id,
+                                    category_name: cat.category_name,
+                                    description: cat.description,
+                                    parent_id: cat.parent_id || null,
+                                    book_title: cat.Books.title || null,
+                                    grade: cat.Books.grade || null,
+                                    subject: cat.Books.subject || null,
+                                    children: [],
+                                }));
+
+        var result: CategoriesOutputDto[] = []; 
+        for (const current of categoriesOutput.filter(cat => !cat.parent_id)) {
+            result.push(this.getRecursiveCategory(current, categoriesOutput));
+        }
+        if (mode == 'flat') {
+            result = result.length > 0 ? this.flattenCategories(result) : [];
+        }
         const total = await this.prisma.categories.count({ where });
-        return { data: categories, total };
+        return { data: result, total };
     }
+
+    async updateCategory(category_id: string, data: Partial<CategoryDto>) {
+        try {
+            return await this.prisma.categories.update({
+                where: { category_id },
+                data,
+            });
+        } catch (error) {
+            return new ExceptionResponse().returnError(error, `categories`);
+        }
+    }
+
+    async deleteWholeCategoryTree(tx: Prisma.TransactionClient, current_category_id: string) {
+        const childCategories = await tx.categories.findMany({ where: { parent_id: current_category_id }, select: { category_id: true } });
+        if (childCategories.length !== 0) {
+            for (const child of childCategories) {
+                await this.deleteWholeCategoryTree(tx, child.category_id);
+            }
+        }
+
+        return await tx.categories.delete({ where: { category_id: current_category_id } });
+    }
+
+    async deleteCategory(category_id: string, mode: ControlMode = ControlMode.SOFT) {
+        try {
+            if (mode == ControlMode.FORCE) {
+                return this.prisma.$transaction(async (tx) => {
+                    return await this.deleteWholeCategoryTree(tx, category_id);
+                });
+            }
+            return await this.prisma.categories.delete({
+                where: { category_id },
+            });
+        } catch (error) {
+            return new ExceptionResponse().returnError(error, `categories`);
+        }
+    }
+}
+
+@Injectable()
+export class QuestionService {
+    constructor(private prisma: PrismaService) {}
 
     async createQuestion(data: CreateQuestionDto[], tutor_uid: string) {
         const tutorExists = await this.prisma.tutor.findUnique({ where: { uid: tutor_uid } });
@@ -262,14 +422,12 @@ export class QuestionService {
 
     async updateQuestion(ques_id: string, data: UpdateQuestionDto) {
         const { answers, categoryId, ...restData } = data;
-        // Explicitly type updateData for better safety
         const updateData: Prisma.QuestionsUpdateInput = { ...restData };
 
-        // Convert string values to enums if they exist in restData
         if (restData.level) {
              const levelKey = String(restData.level).toUpperCase() as keyof typeof DifficultyLevel;
              if (DifficultyLevel[levelKey]) { updateData.level = DifficultyLevel[levelKey]; }
-             else { console.warn(`Invalid level value during update: ${restData.level}`); delete updateData.level; } // Remove invalid value
+             else { console.warn(`Invalid level value during update: ${restData.level}`); delete updateData.level; } 
         }
          if (restData.type) {
              const typeKey = String(restData.type).toUpperCase() as keyof typeof QuestionType;
@@ -296,7 +454,7 @@ export class QuestionService {
             return await this.prisma.questions.update({
                 where: { ques_id },
                 data: updateData,
-                select: { ques_id: true, content: true, status: true, level: true, type: true } // Select updated fields
+                select: { ques_id: true, content: true, status: true, level: true, type: true } 
             });
         } catch (error) {
              console.error(`Error updating question ${ques_id}:`, error);
@@ -309,9 +467,7 @@ export class QuestionService {
         return this.prisma.$transaction(async (tx) => {
             const questionExists = await tx.questions.findUnique({ where: { ques_id } });
             if (!questionExists) { throw new NotFoundException(`Question with ID ${ques_id} not found`); }
-            // Consider relations: deleting questions might need checking exam_questions etc.
             await tx.answers.deleteMany({ where: { ques_id } });
-            // Add deletion for other related data if necessary (e.g., Question_of_exam)
             const deletedQuestion = await tx.questions.delete({ where: { ques_id } });
             return deletedQuestion;
         });
@@ -323,17 +479,17 @@ export class QuestionService {
         const existingAnswer = await this.prisma.answers.findUnique({ where: { ques_id_aid: { ques_id, aid: aidNum } } });
         if (!existingAnswer) { throw new NotFoundException(`Answer with AID ${aidNum} for Question ID ${ques_id} not found`); }
 
-        const { content, isCorrect, explaination } = answer; // Include explaination
+        const { content, isCorrect, explaination } = answer; 
         const updateData: Prisma.AnswersUpdateInput = {};
         if (content !== undefined) updateData.content = content;
         if (isCorrect !== undefined) updateData.is_correct = isCorrect;
-        if (explaination !== undefined) updateData.explaination = explaination; // Update explaination
+        if (explaination !== undefined) updateData.explaination = explaination;
 
         try {
             return await this.prisma.answers.update({
                 where: { ques_id_aid: { ques_id, aid: aidNum } },
                 data: updateData,
-                select: { aid: true, ques_id: true, content: true, is_correct: true, explaination: true } // Select updated fields
+                select: { aid: true, ques_id: true, content: true, is_correct: true, explaination: true } 
             });
         } catch (error) {
              console.error(`Error updating answer ${aidNum} for question ${ques_id}:`, error);

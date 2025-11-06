@@ -7,7 +7,6 @@ import {
 
 const prisma = new PrismaClient();
 
-// Hàm trợ giúp để định dạng nội dung giống ReactQuill
 function formatQuillContent(text) {
   if (!text) return null;
   // Thay thế $...$ bằng <span class="ql-formula">...</span>
@@ -40,7 +39,7 @@ async function main() {
   console.log(`Bắt đầu seeding Questions và Answers cho Toán 9...`);
 
   const tutor = await prisma.user.findFirst({
-    where: { email: 'system.tutor@julie.com' },
+    where: { email: 'tutor@gmail.com' },
   });
   
 
@@ -9408,7 +9407,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-
-
-
-  
