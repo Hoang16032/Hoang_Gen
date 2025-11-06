@@ -17,8 +17,13 @@ import UserManagement from "../pages/admin/UserManagement";
 import AboutPage from "../pages/public/AboutPage";
 import ContactPage from "../pages/public/ContactPage";
 import ResourcesManagement from "../pages/admin/ResourcesManagement";
-import StudentDashboard from "../pages/student/StudentDashboard";
 import ClassDetailPage from "../pages/tutor/ClassDetailPage";
+
+import StudentDashboard from "../pages/student/StudentDashboard";
+import StudentProfilePage from "../pages/student/StudentProfilePage";
+import StudentMyClassPage from '../pages/student/StudentMyClassPage';
+import StudentClassDetailPage from '../pages/student/StudentClassDetailPage';
+import StudentThreadDetailPage from '../pages/student/StudentThreadDetailPage';
 function AppRoutes(props) {
   return (
     <Routes>
@@ -52,6 +57,10 @@ function AppRoutes(props) {
       <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
         <Route path="/student" element={<Layout />}>
           <Route path="dashboard" element={<StudentDashboard />} />
+          <Route path="profile" element={<StudentProfilePage />} />
+          <Route path="myclass" element={<StudentMyClassPage />} />
+          <Route path="myclass/:classId" element={<StudentClassDetailPage />} />
+          <Route path="myclass/:classId/:threadId" element={<StudentThreadDetailPage />} />  
         </Route>
       </Route>
       {/* Route bắt các đường dẫn không hợp lệ (404 Not Found) */}
