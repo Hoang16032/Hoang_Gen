@@ -17,9 +17,14 @@ import UserManagement from "../pages/admin/UserManagement";
 import AboutPage from "../pages/public/AboutPage";
 import ContactPage from "../pages/public/ContactPage";
 import ResourcesManagement from "../pages/admin/ResourcesManagement";
+
 import StudentDashboard from "../pages/student/StudentDashboard";
 import StudentProfilePage from "../pages/student/StudentProfilePage";
-
+import StudentMyClassPage from '../pages/student/StudentMyClassPage';
+import StudentClassDetailPage from '../pages/student/StudentClassDetailPage';
+import StudentThreadDetailPage from '../pages/student/StudentThreadDetailPage';
+import StudentPracticePage from '../pages/student/StudentPracticePage';
+import StudentPracticeSessionPage from '../pages/student/StudentPracticeSessionPage';
 
 function AppRoutes(props) {
   return (
@@ -50,12 +55,18 @@ function AppRoutes(props) {
           <Route path="class" element={<ClassPage />} />
         </Route>
       </Route>
-      
+
       {/* Nhóm các route cho Student */}
       <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
         <Route path="/student" element={<Layout />}>
           <Route path="dashboard" element={<StudentDashboard />} />
           <Route path="profile" element={<StudentProfilePage />} />
+          <Route path="myclass" element={<StudentMyClassPage />} />
+          <Route path="myclass/:classId" element={<StudentClassDetailPage />} />
+          <Route path="myclass/:classId/:threadId" element={<StudentThreadDetailPage />} />  
+          <Route path="practice" element={<StudentPracticePage />} />
+          <Route path="practice/:categoryId/session" element={<StudentPracticeSessionPage />} />
+
         </Route>
       </Route>
       {/* Route bắt các đường dẫn không hợp lệ (404 Not Found) */}

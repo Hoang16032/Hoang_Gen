@@ -25,6 +25,8 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import Logo from "../assets/images/logo.png";
 import GroupOutlined from "@mui/icons-material/GroupOutlined";
 import AutoStoriesOutlined from "@mui/icons-material/AutoStoriesOutlined";
+import LibraryBooksIcon from "@mui/icons-material/LibraryBooks"; //Luyện tập
+import AssignmentIcon from "@mui/icons-material/Assignment"; //Bài tập
 
 const COLLAPSED_WIDTH = 80;
 const FULL_WIDTH_DEFAULT_FOR_MOBILE = 260;
@@ -49,10 +51,11 @@ const adminMenuItems = [
   { label: "Cài đặt", to: "/admin/settings", Icon: SettingsIcon },
 ];
 
-// cấu hình cho Student
 const studentMenuItems = [
   { label: "Bảng điều khiển", to: "/student/dashboard", Icon: DashboardIcon },
   { label: "Lớp học của tôi", to: "/student/myclass", Icon: GroupOutlined },
+  { label: "Luyện tập", to: "/student/practice", Icon: LibraryBooksIcon },
+  { label: "Bài tập", to: "/student/homework", Icon: AssignmentIcon },
 ];
 const menuConfigByRole = {
   tutor: tutorMenuItems,

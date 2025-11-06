@@ -4,7 +4,7 @@ import { getAllQuestions, getMyQuestions, deleteQuestion } from '../../services/
 import { getAllBooks, getAllCategories } from '../../services/CategoryService';
 import QuestionPopup from '../../components/QuestionPopup';
 import ActionMenu from '../../components/ActionMenu';
-import AppSnackbar from '../../components/Snackbar'; 
+import AppSnackbar from '../../components/SnackBar'; 
 import { jwtDecode } from 'jwt-decode';
 import {
     Box, Typography, Button, Paper, Table, TableBody, TableCell,

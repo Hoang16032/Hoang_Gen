@@ -23,8 +23,8 @@ import {
   Backdrop, 
   Fade, 
   IconButton, 
-  Snackbar, // Thêm Snackbar
-  Alert, // Thêm Alert
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { styled, alpha } from "@mui/material/styles";
 import {
@@ -57,19 +57,17 @@ import BadgeMastery from "../../assets/images/Badge.png";
 import Avatar1 from "../../assets/images/Avatar.jpg";
 
 // --- DỮ LIỆU MẪU (API-READY VỚI CSDL migration.sql) ---
-// Dùng làm giá trị ban đầu cho State
 const initialStudentData = {
-  name: "Nguyễn Hàm Hoàng", // User (fname, mname, lname)
-  school: "Trường THCS Lê Quý Đôn", // Student (school)
-  avatarUrl: Avatar1, // User (avata_url)
-  motto: "Học, học nữa, học mãi!", // Thêm (không có trong CSDL, có thể thêm vào Student)
+  name: "Nguyễn Hàm Hoàng",
+  school: "Trường THCS Lê Quý Đôn",
+  avatarUrl: Avatar1,
+  motto: "Học, học nữa, học mãi!",
   studyStreak: 15,
   totalHours: 72,
-  questionsAnswered: 830, // API đếm từ Exam_taken
-  avgCorrectPercent: 78, // API tính từ Exam_taken
+  questionsAnswered: 830,
+  avgCorrectPercent: 78,
 };
 
-// Dữ liệu BKT (API sẽ tính từ Categories, Questions, Exam_taken)
 const competencyData = [
     { subject: 'Căn bậc hai', mastery: 90, fullMark: 100 },
     { subject: 'Hàm số bậc nhất', mastery: 75, fullMark: 100 },
@@ -79,13 +77,11 @@ const competencyData = [
     { subject: 'Đường tròn', mastery: 55, fullMark: 100 },
 ];
 
-// Dữ liệu rút gọn cho Card (Yêu cầu 2)
 const skillsToImprovePreview = [
     { id: 1, name: 'Giải phương trình chứa căn', mastery: 45 },
     { id: 2, name: 'Tiếp tuyến đường tròn', mastery: 52 },
     { id: 3, name: 'Hệ thức Vi-ét', mastery: 60 },
 ];
-// Dữ liệu đầy đủ cho Modal (Yêu cầu 2)
 const allSkillsToImprove = [
     ...skillsToImprovePreview,
     { id: 4, name: 'Góc nội tiếp', mastery: 62 },
@@ -93,14 +89,12 @@ const allSkillsToImprove = [
     { id: 6, name: 'Bất đẳng thức', mastery: 30 },
 ];
 
-// Dữ liệu rút gọn cho Card (Yêu cầu 2)
 const badgesPreview = [
     { id: 1, name: 'Bậc thầy Lượng giác', icon: BadgeMastery, date: '01/11/2025' },
     { id: 2, name: 'Chiến binh (50+)', icon: BadgeMastery, date: '30/10/2025' },
     { id: 3, name: 'Cú đêm', icon: BadgeMastery, date: '28/10/2025' },
     { id: 4, name: 'Chuyên gia Căn bậc hai', icon: BadgeMastery, date: '25/10/2025' },
 ];
-// Dữ liệu đầy đủ cho Modal (Yêu cầu 2)
 const allBadges = [
     ...badgesPreview,
     { id: 5, name: 'Người bắt đầu', icon: BadgeMastery, date: '01/10/2025' },
@@ -200,15 +194,24 @@ export default function StudentProfilePage() {
     const [isSkillsModalOpen, setIsSkillsModalOpen] = useState(false); 
     const [toast, setToast] = useState({ open: false, message: '', severity: 'success' });
 
-    // *** (1) ĐÂY LÀ STATE QUẢN LÝ DỮ LIỆU PROFILE CHÍNH ***
+    // State quản lý dữ liệu profile chính
     const [profileData, setProfileData] = useState(initialStudentData);
     
-    // *** (2) ĐÂY LÀ STATE QUẢN LÝ VIỆC GÕ CHỮ TRONG FORM CÀI ĐẶT ***
+    // State quản lý form thông tin
     const [formInput, setFormInput] = useState({
         name: initialStudentData.name, 
         school: initialStudentData.school,
         motto: initialStudentData.motto,
     });
+
+    // *** (1) BỔ SUNG STATE CHO FORM MẬT KHẨU ***
+    const [passwordInput, setPasswordInput] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+    });
+    const [passwordError, setPasswordError] = useState('');
+    // ---------------------------------------------
 
     const handleChangeTab = (event, newValue) => {
         setTabValue(newValue);
@@ -230,9 +233,8 @@ export default function StudentProfilePage() {
         setToast(prev => ({ ...prev, open: false }));
     };
 
-    // *** (3) HÀM "LƯU THAY ĐỔI" SẼ CẬP NHẬT STATE CHÍNH ***
+    // Hàm "Lưu thay đổi" (Thông tin cá nhân)
     const handleSaveChanges = () => {
-        // Cập nhật State chính (profileData) từ State của form (formInput)
         setProfileData(prevData => ({
             ...prevData,
             name: formInput.name,
@@ -243,17 +245,44 @@ export default function StudentProfilePage() {
         setToast({ open: true, message: 'Cập nhật thông tin thành công!', severity: 'success' });
     };
     
+    // *** (2) BỔ SUNG LOGIC CHO HÀM "ĐỔI MẬT KHẨU" ***
     const handleChangePassword = () => {
-        // (API call sẽ ở đây)
-        setToast({ open: true, message: 'Đổi mật khẩu thất bại! Mật khẩu cũ không đúng.', severity: 'error' });
+        // 1. Kiểm tra trùng khớp
+        if (passwordInput.newPassword !== passwordInput.confirmPassword) {
+            setPasswordError('Mật khẩu mới không trùng khớp');
+            setToast({ open: true, message: 'Đổi mật khẩu thất bại! Mật khẩu mới không trùng khớp.', severity: 'error' });
+            return;
+        }
+        
+        // 2. Kiểm tra rỗng
+        if (!passwordInput.currentPassword || !passwordInput.newPassword) {
+             setToast({ open: true, message: 'Vui lòng điền đầy đủ thông tin.', severity: 'warning' });
+            return;
+        }
+        
+        // 3. (Giả lập API call)
+        // Giả sử mật khẩu cũ đúng là '123456'
+        if (passwordInput.currentPassword !== '123456') {
+             setToast({ open: true, message: 'Đổi mật khẩu thất bại! Mật khẩu cũ không đúng.', severity: 'error' });
+        } else {
+             setToast({ open: true, message: 'Đổi mật khẩu thành công!', severity: 'success' });
+             // Xóa state sau khi thành công
+             setPasswordInput({
+                currentPassword: '',
+                newPassword: '',
+                confirmPassword: '',
+            });
+            setPasswordError('');
+        }
     };
+    // ----------------------------------------------------
 
     const handlePracticeClick = (skillName) => {
         setToast({ open: true, message: `Đang chuẩn bị bài luyện tập cho: ${skillName}...`, severity: 'info' });
         // (Sau này sẽ thay bằng navigate(`/student/practice/${skillId}`))
     };
 
-    // *** (4) HÀM NÀY NỐI VIỆC GÕ CHỮ VÀO STATE formInput ***
+    // Hàm cập nhật state cho form thông tin
     const handleFormChange = (event) => {
         const { name, value } = event.target;
         setFormInput(prevInput => ({
@@ -261,6 +290,39 @@ export default function StudentProfilePage() {
             [name]: value,
         }));
     };
+
+    // *** (3) BỔ SUNG HÀM CẬP NHẬT STATE CHO FORM MẬT KHẨU ***
+    const handlePasswordInputChange = (event) => {
+        const { name, value } = event.target;
+        const newPasswordState = {
+            ...passwordInput,
+            [name]: value,
+        };
+        setPasswordInput(newPasswordState);
+
+        // Kiểm tra lỗi trùng khớp ngay khi gõ
+        if (name === 'newPassword' || name === 'confirmPassword') {
+            const newPass = (name === 'newPassword') ? value : newPasswordState.newPassword;
+            const confirmPass = (name === 'confirmPassword') ? value : newPasswordState.confirmPassword;
+
+            if (confirmPass && newPass !== confirmPass) {
+                setPasswordError('Mật khẩu mới không trùng khớp');
+            } else {
+                setPasswordError(''); // Xóa lỗi nếu khớp
+            }
+        }
+    };
+    // --------------------------------------------------------
+
+    // *** (4) BỔ SUNG LOGIC VALIDATE NÚT ĐỔI MẬT KHẨU ***
+    const isPasswordFormValid = 
+        passwordInput.currentPassword.length > 0 &&
+        passwordInput.newPassword.length > 0 &&
+        passwordInput.confirmPassword.length > 0 &&
+        passwordInput.newPassword === passwordInput.confirmPassword &&
+        !passwordError; // Đảm bảo không có lỗi
+    // ---------------------------------------------------
+
 
     const cardVariants = {
         hidden: { opacity: 0, y: 20 },
@@ -294,11 +356,9 @@ export default function StudentProfilePage() {
     );
 
     return (
-        // *** ĐÃ SỬA LỖI LAYOUT: Tắt giới hạn chiều rộng ***
         <Container maxWidth={false} sx={{ mt: 4, mb: 4 }}>
         
-            {/* === HÀNG 1: AVATAR VÀ STATS (Bố cục 6/6) === */}
-            {/* *** (5) SỬA LẠI ĐỂ ĐỌC TỪ STATE `profileData` *** */}
+            {/* === HÀNG 1: AVATAR VÀ STATS === */}
             <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
                     <motion.div custom={0} variants={cardVariants} initial="hidden" animate="visible">
@@ -379,10 +439,8 @@ export default function StudentProfilePage() {
                     </Grid>
                 </Grid>
             </Grid> 
-            {/* === KẾT THÚC HÀNG 1 === */}
-
-
-            {/* === HÀNG 2: KHU VỰC TABS (ĐÃ SỬA LẠI CẤU TRÚC) === */}
+            
+            {/* === HÀNG 2: KHU VỰC TABS === */}
             <Grid container sx={{ mt: 3 }}>
                 <Grid item xs={12}>
                     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -396,7 +454,7 @@ export default function StudentProfilePage() {
             
             {/* === HÀNG 3: NỘI DUNG CỦA TABS === */}
 
-            {/* NỘI DUNG TAB 1: HỒ SƠ NĂNG LỰC (BỐ CỤC 6/6) */}
+            {/* NỘI DUNG TAB 1: HỒ SƠ NĂNG LỰC */}
             <TabPanel value={tabValue} index={0}>
                 <Grid container spacing={3} justifyContent="center"> 
                     <Grid item xs={12} lg={6}>
@@ -488,7 +546,7 @@ export default function StudentProfilePage() {
             {/* NỘI DUNG TAB 2: CÀI ĐẶT TÀI KHOẢN */}
             <TabPanel value={tabValue} index={1}>
                 <Grid container spacing={3} justifyContent="center">
-                    {/* *** (6) SỬA LẠI ĐỂ KẾT NỐI VỚI STATE *** */}
+                    {/* Form Thông tin cá nhân */}
                     <Grid item xs={12} md={6}>
                         <ProfileCard>
                             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
@@ -497,9 +555,9 @@ export default function StudentProfilePage() {
                             <Box component="form" sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                 <TextField 
                                     label="Họ và tên"
-                                    name="name" // Khớp với state
-                                    value={formInput.name} // Đọc từ state
-                                    onChange={handleFormChange} // Ghi vào state
+                                    name="name" 
+                                    value={formInput.name} 
+                                    onChange={handleFormChange} 
                                     variant="filled"
                                 />
                                 <TextField 
@@ -510,23 +568,23 @@ export default function StudentProfilePage() {
                                 />
                                 <TextField 
                                     label="Trường học" 
-                                    name="school" // Khớp với state
-                                    value={formInput.school} // Đọc từ state
-                                    onChange={handleFormChange} // Ghi vào state
+                                    name="school" 
+                                    value={formInput.school} 
+                                    onChange={handleFormChange} 
                                     variant="filled"
                                 />
                                 <TextField 
                                     label="Khẩu hiệu" 
-                                    name="motto" // Khớp với state
-                                    value={formInput.motto} // Đọc từ state
-                                    onChange={handleFormChange} // Ghi vào state
+                                    name="motto" 
+                                    value={formInput.motto} 
+                                    onChange={handleFormChange} 
                                     variant="filled"
                                 />
                                 <Button 
                                     variant="contained" 
                                     color="primary" 
                                     sx={{ mt: 1, alignSelf: 'flex-end' }}
-                                    onClick={handleSaveChanges} // Kích hoạt hàm lưu
+                                    onClick={handleSaveChanges} 
                                 >
                                     Lưu thay đổi
                                 </Button>
@@ -534,6 +592,7 @@ export default function StudentProfilePage() {
                         </ProfileCard>
                     </Grid>
 
+                    {/* *** (5) SỬA LẠI FORM MẬT KHẨU ĐỂ KẾT NỐI STATE VÀ LOGIC *** */}
                     <Grid item xs={12} md={6}>
                         <ProfileCard>
                             <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
@@ -544,28 +603,42 @@ export default function StudentProfilePage() {
                                     label="Mật khẩu cũ" 
                                     type="password" 
                                     variant="filled" 
+                                    name="currentPassword"
+                                    value={passwordInput.currentPassword}
+                                    onChange={handlePasswordInputChange}
                                 />
                                 <TextField 
                                     label="Mật khẩu mới" 
                                     type="password" 
                                     variant="filled" 
+                                    name="newPassword"
+                                    value={passwordInput.newPassword}
+                                    onChange={handlePasswordInputChange}
+                                    error={!!passwordError} // Hiển thị lỗi nếu có
                                 />
                                 <TextField 
                                     label="Xác nhận mật khẩu mới" 
                                     type="password" 
                                     variant="filled" 
+                                    name="confirmPassword"
+                                    value={passwordInput.confirmPassword}
+                                    onChange={handlePasswordInputChange}
+                                    error={!!passwordError} // Hiển thị lỗi nếu có
+                                    helperText={passwordError} // Hiển thị tin nhắn lỗi
                                 />
                                 <Button 
                                     variant="contained" 
                                     color="primary" 
                                     sx={{ mt: 1, alignSelf: 'flex-end' }}
-                                    onClick={handleChangePassword} // Kích hoạt hàm đổi MK
+                                    onClick={handleChangePassword}
+                                    disabled={!isPasswordFormValid} // Bật/tắt nút dựa trên state
                                 >
                                     Đổi mật khẩu
                                 </Button>
                             </Box>
                         </ProfileCard>
                     </Grid>
+                    {/* ----------------------------------------------------------- */}
                 </Grid>
             </TabPanel>
 
