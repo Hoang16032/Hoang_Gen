@@ -27,10 +27,6 @@ const Header = styled(Box)({
     alignItems: 'center',
     marginBottom: '24px',
 });
-<<<<<<< HEAD
-// --- Kết thúc Styled Components ---
-=======
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -47,18 +43,10 @@ function AssignmentPage() {
     const navigate = useNavigate();
     const [token] = useState(() => localStorage.getItem('token'));
     
-<<<<<<< HEAD
-    // State cho việc tải dữ liệu
-=======
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
     const [masterExams, setMasterExams] = useState([]);
     const [tutorClasses, setTutorClasses] = useState([]);
     const [loadingData, setLoadingData] = useState(true);
 
-<<<<<<< HEAD
-    // State cho form
-=======
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
     const [selectedExamId, setSelectedExamId] = useState('');
     const [selectedClassIds, setSelectedClassIds] = useState([]);
     const [startAt, setStartAt] = useState(dayjs());
@@ -66,19 +54,11 @@ function AssignmentPage() {
     const [limitTaken, setLimitTaken] = useState(1);
     const [examType, setExamType] = useState('practice');
 
-<<<<<<< HEAD
-    // State cho submit
-=======
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState(null);
 
 
-<<<<<<< HEAD
-    // Tải dữ liệu (Đề thi và Lớp học) khi component mount
-=======
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
     const fetchInitialData = useCallback(async () => {
         if (!token) {
             setError("Không tìm thấy token. Vui lòng đăng nhập lại.");
@@ -88,10 +68,6 @@ function AssignmentPage() {
         setLoadingData(true);
         setError(null);
         try {
-<<<<<<< HEAD
-            // Tải song song 2 API
-=======
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
             const [examsResponse, classesResponse] = await Promise.all([
                 getMyExams(token),
                 getClassesByTutor(token)
@@ -122,10 +98,6 @@ function AssignmentPage() {
     const handleSubmit = async () => {
         setSuccessMessage(null);
 
-<<<<<<< HEAD
-        // Validation
-=======
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
         if (!selectedExamId) {
             setError("Vui lòng chọn một đề thi.");
             return;
@@ -142,10 +114,6 @@ function AssignmentPage() {
         setIsSubmitting(true);
         setError(null);
 
-<<<<<<< HEAD
-        // Chuẩn bị dữ liệu cho API
-=======
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
         const sessionData = {
             startAt: startAt.toISOString(),
             expireAt: expireAt.toISOString(),
@@ -154,10 +122,6 @@ function AssignmentPage() {
         };
 
         try {
-<<<<<<< HEAD
-            // Gọi API createExamSession
-=======
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
             await createExamSession(
                 selectedExamId, 
                 selectedClassIds, 
@@ -166,20 +130,11 @@ function AssignmentPage() {
             );
             
             setSuccessMessage("Giao bài thành công!");
-<<<<<<< HEAD
-            // Reset form
-=======
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
             setSelectedExamId('');
             setSelectedClassIds([]);
             setStartAt(dayjs());
             setExpireAt(dayjs().add(1, 'hour'));
             
-<<<<<<< HEAD
-            // Tùy chọn: Chuyển hướng sau khi thành công
-            // setTimeout(() => navigate('/tutor/classes'), 2000); 
-=======
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 
         } catch (err) {
             setError(err.response?.data?.message || "Giao bài thất bại.");

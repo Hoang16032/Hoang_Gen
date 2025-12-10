@@ -42,11 +42,7 @@ export class LessonPlanService {
     }
 
     async getAllPlans(tutor_id?: string) {
-<<<<<<< HEAD
-        if (!tutor_id)
-=======
         if (tutor_id)
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
             return this.prisma.lesson_Plan.findMany({
                 where: {
                     OR: [
@@ -168,15 +164,6 @@ export class CategoryService {
         }
     }
 
-<<<<<<< HEAD
-    getRecursiveCategory(current: CategoriesOutputDto, all: CategoriesOutputDto[]) {
-        const result: CategoriesOutputDto = current
-        const filteredChildren = all.filter(child => child.parent_id === current.category_id);
-        for (const child of filteredChildren) {
-            result.children.push(this.getRecursiveCategory(child, all));
-        }
-        return result;
-=======
     async getRecursiveCategory(current: CategoriesOutputDto) {
         const result: CategoriesOutputDto = current
         const children = await this.prisma.categories.findMany({
@@ -201,7 +188,6 @@ export class CategoryService {
         })
 
         return childLst
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
     }
 
     flattenCategories(categories: CategoriesOutputDto[]): CategoriesOutputDto[] {
@@ -241,14 +227,10 @@ export class CategoryService {
         }
 
         const categories = await this.prisma.categories.findMany({
-<<<<<<< HEAD
-            where,
-=======
             where:{
                 ...where,
                 parent_id: null
             },
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
             skip: skipNum,
             take: takeNum,
             select: {
@@ -283,19 +265,12 @@ export class CategoryService {
                                     children: [],
                                 }));
 
-<<<<<<< HEAD
-        var result: CategoriesOutputDto[] = []; 
-        for (const current of categoriesOutput.filter(cat => !cat.parent_id)) {
-            result.push(this.getRecursiveCategory(current, categoriesOutput));
-        }
-=======
         var result = categoriesOutput
         
         result.forEach(async(item) => {
             item.children = await this.getRecursiveCategory(item)
         })
         
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
         if (mode == 'flat') {
             result = result.length > 0 ? this.flattenCategories(result) : [];
         }
@@ -389,8 +364,6 @@ export class QuestionService {
         });
     }
 
-<<<<<<< HEAD
-=======
 
     async filterAllCategoriesFrom(category_id: string, cateLst: string[]): Promise<string[]> {
         const children = await this.prisma.categories.findMany({
@@ -413,7 +386,6 @@ export class QuestionService {
 
         return cateLst
     }
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
     async getQuestionsByCategory(category_id: string, page?: number | string, limit?: number | string, search?: string, level?: string, type?: string) {
         const pageNum = page ? parseInt(String(page), 10) : 1;
         const limitNum = limit !== undefined ? parseInt(String(limit), 10) : 10;
@@ -421,12 +393,6 @@ export class QuestionService {
         const takeNum = limitNum > 0 ? limitNum : undefined;
 
         const where: Prisma.QuestionsWhereInput = {
-<<<<<<< HEAD
-            category_id: category_id,
-            accessMode: QuestionAccess.public
-        };
-
-=======
             accessMode: QuestionAccess.public
         };
 
@@ -437,7 +403,6 @@ export class QuestionService {
             console.log(filterCate)
         }
 
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
         if (level) { const levelKey = level.toLowerCase() as keyof typeof DifficultyLevel; if (DifficultyLevel[levelKey]) { where.level = DifficultyLevel[levelKey]; } }
         if (type) { const typeKey = type.toUpperCase() as keyof typeof QuestionType; if (QuestionType[typeKey]) { where.type = QuestionType[typeKey]; } else if (Object.values(QuestionType).includes(type as QuestionType)) { where.type = type as QuestionType;} }
         if (search) { where.OR = [ { content: { contains: search, mode: 'insensitive' } }, { explaination: { contains: search, mode: 'insensitive' } } ]; }
@@ -466,11 +431,7 @@ export class QuestionService {
                 },
             });
             const total = await this.prisma.questions.count({ where });
-<<<<<<< HEAD
-            return { data: questions, total };
-=======
             return { data: questions, total, pagetotal: questions.length };
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
         } catch (error) {
              console.error("Error fetching questions by category:", error);
              throw new Error('Could not fetch questions by category.');

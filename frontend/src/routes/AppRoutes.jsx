@@ -17,17 +17,11 @@ import UserManagement from "../pages/admin/UserManagement";
 import AboutPage from "../pages/public/AboutPage";
 import ContactPage from "../pages/public/ContactPage";
 import ResourcesManagement from "../pages/admin/ResourcesManagement";
-<<<<<<< HEAD
-
-=======
-import StudentDashboard from "../pages/student/StudentDashboard";
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 import ClassDetailPage from "../pages/tutor/ClassDetailPage";
 import ExamPage from "../pages/tutor/ExamPage";
 import ExamDetailPage from "../pages/tutor/ExamDetailPage";
 import AssignmentPage from "../pages/tutor/AssignmentPage";
 import SystemSetting from "../pages/admin/SystemSetting.jsx";
-<<<<<<< HEAD
 
 //Student
 import StudentDashboard from "../pages/student/StudentDashboard";
@@ -48,9 +42,6 @@ import TutorProfilePage from "../pages/tutor/TutorProfilePage.jsx";
 import AdminProfilePage from "../pages/admin/AdminProfilePage.jsx";
 import ParentProfilePage from "../pages/parent/ParentProfilePage.jsx";
 
-=======
-import QuestionDetailPage from "../pages/tutor/QuestionDetailPage.jsx";
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 function AppRoutes(props) {
   return (
     <Routes>
@@ -69,10 +60,7 @@ function AppRoutes(props) {
           <Route path="users" element={<UserManagement />} />
           <Route path="resources" element={<ResourcesManagement />} />
           <Route path="settings" element={<SystemSetting />} />
-<<<<<<< HEAD
           <Route path="profile" element={<AdminProfilePage />} />
-=======
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
         </Route>
       </Route>
       {/* Nhóm các route cho Tutor */}
@@ -86,7 +74,6 @@ function AppRoutes(props) {
           <Route path="exam" element={<ExamPage />} />
           <Route path="exam/:examId" element={<ExamDetailPage />} />
           <Route path="assignment" element={<AssignmentPage />} />
-<<<<<<< HEAD
           <Route path="profile" element={<TutorProfilePage />} />
         </Route>
       </Route>
@@ -138,18 +125,6 @@ function AppRoutes(props) {
         </Route>
       </Route>
 
-=======
-          <Route path="question/:questionId" element={<QuestionDetailPage />} />
-
-        </Route>
-      </Route>
-      {/* Nhóm các route cho Student */}
-      <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
-        <Route path="/student" element={<Layout />}>
-          <Route path="dashboard" element={<StudentDashboard />} />
-        </Route>
-      </Route>
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
       {/* Route bắt các đường dẫn không hợp lệ (404 Not Found) */}
       <Route
         path="*"

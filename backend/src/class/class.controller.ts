@@ -13,10 +13,7 @@ import { Roles } from 'src/auth/decorator/roles.decorator';
 import { DuplicatingObject } from 'src/mode/control.mode';
 
 @Controller('classes')
-<<<<<<< HEAD
-=======
 @UseGuards(JwtAuthGuard, RolesGuard)
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 export class ClassController {
   constructor(private readonly classService: ClassService) {}
 
@@ -49,10 +46,7 @@ export class ClassController {
   }
 
   @Get('get/tutor/:id')
-<<<<<<< HEAD
-=======
   @Roles('tutor')
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
   async getClassesByTutor(@Param('id') id: string) {
     return this.classService.getClassesByTutor(id);
   }
@@ -68,8 +62,6 @@ export class ClassController {
     return this.classService.enrollClass(classId, email);
   }
 
-<<<<<<< HEAD
-=======
   @Post('request/:class_id')
   @Roles('parents', 'tutor', 'student')
   requestEnrollment(
@@ -157,7 +149,6 @@ export class ClassController {
     }
   }
 
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
   @Patch(':class_id')
   @Roles('tutor', 'admin')
   updateClass(

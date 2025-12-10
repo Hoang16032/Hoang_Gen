@@ -1,11 +1,7 @@
 import {
     Controller,
     Get, Post, Patch, Delete,
-<<<<<<< HEAD
-    Body, Param, Query,
-=======
     Body, Param, Query, Request,
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
     UseGuards,
     UseInterceptors,
     UploadedFile
@@ -16,31 +12,16 @@ import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard'
 import { RolesGuard } from 'src/auth/guard/roles.guard'
 import { Roles } from 'src/auth/decorator/roles.decorator'
 import { FolderDto, ResourceDto } from './dto/resource.dto'
-<<<<<<< HEAD
-
-@Controller('resources')
-=======
 import { ExceptionResponse } from 'src/exception/Exception.exception'
 
 @Controller('resources')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @UseGuards(JwtAuthGuard, RolesGuard)
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 export class ResourceController {
     constructor(
         private readonly resource: ResourceService
     ){}
 
-<<<<<<< HEAD
-    @Post(':tutor_id')
-    @UseInterceptors(FileInterceptor('file'))
-    uploadDocs(
-        @Param('tutor_id') tutor_id: string,
-        @Body() data: ResourceDto,
-        @UploadedFile() file: Express.Multer.File
-    ){
-        return this.resource.createNewDocs(tutor_id, data, file)
-=======
     @Post('/:folder_id')
     @UseInterceptors(FileInterceptor('file'))
     uploadDocs(
@@ -86,29 +67,16 @@ export class ResourceController {
         } catch (error) {
             return new ExceptionResponse().returnError(error)
         }
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
     }
 }
 
 @Controller('folders')
-<<<<<<< HEAD
-=======
 @UseGuards(JwtAuthGuard, RolesGuard)
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 export class FolderController {
     constructor(
         private readonly folder: FolderService
     ){}
 
-<<<<<<< HEAD
-    @Post(':tutor_id/:class_id')
-    createFolder(
-        @Param('tutor_id') tutor_id: string,
-        @Param('class_id') class_id: string,
-        @Body() data: FolderDto
-    ){
-        return this.folder.createFolder(tutor_id, class_id, data)
-=======
     @Post(':class_id/:category_id')
     createFolder(
         @Param('category_id') category_id: string,
@@ -118,7 +86,6 @@ export class FolderController {
     ){
         const tutor_id = req.user.userId
         return this.folder.createFolder(tutor_id, category_id, class_id, data)
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
     }
 
     @Get(':class_id')
@@ -127,8 +94,6 @@ export class FolderController {
     ){
         return this.folder.getFolderByClass(class_id)
     }
-<<<<<<< HEAD
-=======
 
     @Get(':class_id/:category_id')
     getAllFoldersByLayer(
@@ -161,5 +126,4 @@ export class FolderController {
             return new ExceptionResponse().returnError(error)
         }
     }
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 }

@@ -2,11 +2,7 @@ import { BadRequestException, Injectable, InternalServerErrorException } from "@
 import { PrismaService } from "src/prisma/prisma.service";
 import { FolderDto, ResourceDto } from "./dto/resource.dto";
 import { GoogleDriveService } from "./google/google.service";
-<<<<<<< HEAD
-import * as fs from 'fs';
-=======
 import { Prisma, PrismaClient } from "@prisma/client";
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 
 @Injectable()
 export class FolderService {
@@ -14,11 +10,7 @@ export class FolderService {
         private readonly prisma: PrismaService
     ){}
 
-<<<<<<< HEAD
-    async createFolder(tutor_id: string, class_id: string, data: FolderDto){
-=======
     async createFolder(tutor_id: string, category_id: string, class_id: string, data: FolderDto){
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
         return this.prisma.$transaction(async(tx) => {
             const newFolder = await tx.folders.create({
                 data: {
@@ -26,10 +18,6 @@ export class FolderService {
                     createdAt: new Date(),
                     updateAt: new Date(),
                     tutor: { connect: { uid: tutor_id } },
-<<<<<<< HEAD
-                    ...(data.cate_id ? { category: { connect: {category_id: data.cate_id} } }: {}),
-=======
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
                     ...(data.parent_id ? {Folders: {connect: { folder_id: data.parent_id }}} : {})
                 }
             })
@@ -37,29 +25,19 @@ export class FolderService {
             await tx.folder_of_class.create({
                 data: {
                     class: {connect: {class_id}},
-<<<<<<< HEAD
-                    folder: {connect: {folder_id: newFolder.folder_id}}
-                }
-            })
-=======
                     category: {connect: {category_id}},
                     folder: {connect: {folder_id: newFolder.folder_id}}
                 }
             })
 
             return {data: newFolder}
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
         })
     }
 
     async traverseFolderTree(class_id:string, parent_id: string | null = null){
         const fatherLayer = await this.prisma.folders.findMany({
             where: {
-<<<<<<< HEAD
-                classes: {some: {class_id}},
-=======
                 class: {some: {class_id}},
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
                 parent_id: parent_id
             }
         })
@@ -79,8 +57,6 @@ export class FolderService {
         const root = await this.traverseFolderTree(class_id)
         return root
     }
-<<<<<<< HEAD
-=======
 
     async getAllFoldersByLayer(class_id: string, category_id:string, parent_id: string){
         if (!parent_id) {
@@ -164,21 +140,12 @@ export class FolderService {
             return {message: "Delete Successfully"}
         })
     }
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 }
 
 @Injectable()
 export class ResourceService {
     constructor(
         private readonly prisma: PrismaService,
-<<<<<<< HEAD
-        private readonly drive: GoogleDriveService
-    ){}
-
-    async createNewDocs(tutor_id: string, data: ResourceDto, file: Express.Multer.File){ 
-        if (!file) throw new BadRequestException("File buffer not found.");
-
-=======
         private readonly drive: GoogleDriveService,
         private readonly folder: FolderService
     ){}
@@ -190,7 +157,6 @@ export class ResourceService {
 
         if (!checkExisted) throw new BadRequestException("Folder not found!");
 
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
         const fileStream = file.buffer
         if (!fileStream) {
             throw new InternalServerErrorException("File buffer not found. Check Multer configuration.");
@@ -219,30 +185,6 @@ export class ResourceService {
                 }
             })
 
-<<<<<<< HEAD
-            if (data.folder && data.folder.length > 0) {
-                for ( const fold in data.folder) {
-                    await tx.resource_in_folder.create({
-                        data: {
-                            resources: { connect: { did: newDocs.did } },
-                            folder: { connect: { folder_id: fold } }
-                        }
-                    })
-                }
-            }
-
-            if ((!data.folder || data.folder.length === 0) && data.cate_id) {
-                await tx.resources.update({
-                    where: { did: newDocs.did },
-                    data: {
-                        category: { connect: { category_id: data.cate_id }}
-                    }
-                })
-            }
-            return newDocs
-        })
-    }
-=======
             if (folder_id) {
                 await tx.resources_in_folder.create({
                     data: {
@@ -274,5 +216,4 @@ export class ResourceService {
             data
         })
     }
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 }
