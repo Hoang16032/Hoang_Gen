@@ -1,11 +1,7 @@
 import { 
   Controller, 
   Get, Post, Patch, Delete,
-<<<<<<< HEAD
-  Body, Query, Param, 
-=======
   Body, Query, Param, Request,
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
   UseGuards 
 } from '@nestjs/common';
 import { ClassService, ScheduleService } from './class.service';

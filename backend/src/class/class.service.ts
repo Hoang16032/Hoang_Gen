@@ -1,17 +1,9 @@
-<<<<<<< HEAD
-import { BadRequestException, Injectable, InternalServerErrorException } from '@nestjs/common';
-=======
 import { BadRequestException, ForbiddenException, Injectable, InternalServerErrorException } from '@nestjs/common';
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 import { PrismaService } from '../prisma/prisma.service';
 import {ClassDto, ScheduleDto} from './dto/class.dto';
 import { google } from 'googleapis';
 import { addDays, isBefore, setDate, setHours, setMinutes } from 'date-fns';
-<<<<<<< HEAD
-import { ClassStatus } from '@prisma/client';
-=======
 import { ClassStatus, EnrollStatus, Prisma } from '@prisma/client';
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
 import { DuplicatingObject } from 'src/mode/control.mode';
 require('dotenv').config()
 
@@ -95,10 +87,6 @@ export class ScheduleService {
     console.log('✅ Created event:', response.data.htmlLink);
   }
 
-<<<<<<< HEAD
-  async createSchedule(class_id:string, schedules: ScheduleDto[]){
-    return this.prisma.$transaction(async(tx) => {
-=======
   parseTimeStrToNum(time: string){
     const data = time.split(":")
     return parseFloat(data[0]) + parseFloat(data[1])/60.0; 
@@ -107,7 +95,6 @@ export class ScheduleService {
   async createSchedule(class_id:string, schedules: ScheduleDto[]){
     return this.prisma.$transaction(async(tx) => {
 
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
       var cnt = 1 + await tx.schedule.count({
         where: {class_id}
       })
@@ -115,8 +102,6 @@ export class ScheduleService {
       var schedLst = []
 
       for (const item of schedules){
-<<<<<<< HEAD
-=======
 
         const newStartAtNum: Number = this.parseTimeStrToNum(item.startAt);
         const newEndAtNum: Number = this.parseTimeStrToNum(item.endAt);
@@ -163,7 +148,6 @@ export class ScheduleService {
 
         if (checkExist && checkExist.length) continue;
 
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
         const sched = await tx.schedule.create({
           data:{
             ...item,
@@ -401,11 +385,7 @@ export class ClassService {
         nb_of_student: true,
         createdAt: true,  
         startat: true,   
-<<<<<<< HEAD
-
-=======
         plan_id: true,
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
         tutor: { 
           select: {
             user: {
@@ -442,8 +422,6 @@ export class ClassService {
     return classDetails;
   }
 
-<<<<<<< HEAD
-=======
   async requestForClass(class_id: string, student_lst: string[]){
     return this.prisma.$transaction(async (tx) => {
       const result = []
@@ -561,7 +539,6 @@ export class ClassService {
     })
   }
 
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
   async enrollClass(class_id: string, email: string) {
     return this.prisma.$transaction(async (tx) => {
 
@@ -633,8 +610,6 @@ export class ClassService {
     }
   }
 
-<<<<<<< HEAD
-=======
   async copycatResources(tx: Prisma.TransactionClient, current_folder: string, prev_copy: string){
 
   }
@@ -681,17 +656,12 @@ export class ClassService {
     }
   }
 
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
   async duplicateClass(tutor_id: string, data: Partial<ClassDto>, d_class_id: string, dupLst: DuplicatingObject[] = []){
     try {
       return this.prisma.$transaction(async(tx) => {
         const classCopy = await tx.class.findUnique({
           where: {class_id: d_class_id},
-<<<<<<< HEAD
-          include: {schedule: true, resources: true, plan: true}
-=======
           include: {schedule: true, folders: true, plan: true}
->>>>>>> d937f31e5ab0572198a09e05dc116193d4c03268
         })
 
         const newClassData: ClassDto = {
