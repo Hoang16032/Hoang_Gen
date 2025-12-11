@@ -1,382 +1,388 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 import {
-  Box,
-  Typography,
-  Paper,
-  Grid,
-  TextField,
-  Button,
-  Avatar,
-  CircularProgress,
-  Alert,
   Snackbar,
-  Stack,
-  Divider,
-  InputAdornment,
-  Container,
-  Fade,
-  useTheme
+  Alert,
+  CircularProgress,
+  
 } from "@mui/material";
 import {
-  School as SchoolIcon,
-  Cake as CakeIcon,
-  Email as EmailIcon,
-  Badge as BadgeIcon,
-  Save as SaveIcon,
-  Person as PersonIcon,
-  Edit as EditIcon,
-  CameraAlt as CameraIcon
+  CameraAlt,
+  Save,
+  Email,
+  CalendarToday,
+  InfoOutlined,
+  CloudUpload,
 } from "@mui/icons-material";
-import { jwtDecode } from "jwt-decode";
-
-import { getUserById, updateUser } from "../../services/UserService";
-
+import "./Profile.css"; // Giữ nguyên file CSS cũ
+import SchoolIcon from "@mui/icons-material/School";
 const StudentProfilePage = () => {
-  const theme = useTheme();
-  const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
-  const [userId, setUserId] = useState(null);
+  const navigate = useNavigate();
 
-  // State form
-  const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    fname: "",
-    lname: "",
-    school: "",
-    dob: "",
+  // --- STATE QUẢN LÝ ---
+  
+  // 1. savedUser: Dữ liệu "Đã lưu" - Dùng để hiển thị ở Cột Trái (Không đổi khi đang gõ)
+  const [savedUser, setSavedUser] = useState({
+    fname: "", mname: "", lname: "",
+    email: "", username: "", role: "",
+    avata_url: "", createAt: ""
   });
 
-  // State thông báo
+  // 2. formData: Dữ liệu "Đang nhập" - Dùng cho các ô Input ở Cột Phải
+  const [formData, setFormData] = useState({
+    fname: "", mname: "", lname: "",
+    school: "", dob: ""
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [toast, setToast] = useState({ open: false, message: "", severity: "success" });
 
-  // 1. Load dữ liệu khi vào trang
+  // --- CẤU HÌNH ---
+  const API_URL = "http://localhost:4000";
+  const token = localStorage.getItem("token");
+
+  const getAuthConfig = () => ({
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  // --- 1. FETCH DỮ LIỆU ---
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
+    const fetchProfile = async () => {
+      let userId = null;
+      if (token) {
+        try {
+          const decoded = jwtDecode(token);
+          userId = decoded.sub || decoded.uid;
+        } catch (error) {
+          console.error("Token lỗi:", error);
+        }
+      }
+
+      if (!token || !userId) {
+        setToast({ open: true, message: "Phiên đăng nhập hết hạn", severity: "error" });
+        setTimeout(() => navigate("/login"), 1500);
+        return;
+      }
+
       try {
-        const decoded = jwtDecode(token);
-        const uid = decoded.sub || decoded.uid; // Lấy UID từ token
-        setUserId(uid);
-        
-        // Gọi hàm fetch data
-        fetchUserProfile(uid, token);
+        setLoading(true);
+        const response = await axios.get(`${API_URL}/users/${userId}`, getAuthConfig());
+        const data = response.data;
+
+        const schoolVal = data.student?.school || "";
+        const dobVal = data.student?.dob ? data.student.dob.split("T")[0] : "";
+
+        // Set dữ liệu cho cả 2 state ban đầu
+        const fullData = { ...data, school: schoolVal, dob: dobVal };
+        setSavedUser(fullData); 
+        setFormData({
+          fname: data.fname || "",
+          mname: data.mname || "",
+          lname: data.lname || "",
+          school: schoolVal,
+          dob: dobVal
+        });
+
+        setLoading(false);
       } catch (error) {
-        console.error("Lỗi decode token:", error);
-        setToast({ open: true, message: "Phiên đăng nhập không hợp lệ", severity: "error" });
+        console.error("Lỗi tải thông tin:", error);
         setLoading(false);
       }
-    } else {
-      setLoading(false);
-    }
-  }, []);
+    };
 
-  // Hàm gọi API lấy thông tin
-  const fetchUserProfile = async (id, token) => {
+    fetchProfile();
+  }, [navigate, token]);
+
+  // --- XỬ LÝ INPUT (Chỉ update formData) ---
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  // --- 2. UPLOAD ẢNH ---
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Kiểm tra sơ bộ (Client side validation)
+    if (file.size > 5 * 1024 * 1024) { // 5MB
+        setToast({ open: true, message: "Ảnh quá lớn! Vui lòng chọn ảnh < 5MB", severity: "warning" });
+        return;
+    }
+
+    const decoded = jwtDecode(token);
+    const userId = decoded.sub || decoded.uid;
+    const uploadData = new FormData();
+    uploadData.append("file", file);
+
     try {
-      setLoading(true);
-      const data = await getUserById(id, token);
-      
-      // Map dữ liệu vào form
-      setFormData({
-        username: data.username || "",
-        email: data.email || "",
-        fname: data.fname || "",
-        lname: data.lname || "",
-        school: data.student?.school || "",
-        // Chuyển đổi ngày ISO về yyyy-MM-dd cho input date
-        dob: data.student?.dob ? data.student.dob.split("T")[0] : "",
-      });
+      // Backend Controller: @Post(':id/avatar')
+      const res = await axios.post(
+        `${API_URL}/users/${userId}/avatar`,
+        uploadData,
+        {
+          headers: {
+            ...getAuthConfig().headers,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      if (res.data) {
+        // Cập nhật Avatar ngay lập tức cho savedUser vì ảnh đã lên server
+        const newAvatarUrl = res.data.avata_url || URL.createObjectURL(file);
+        setSavedUser(prev => ({ ...prev, avata_url: newAvatarUrl }));
+        
+        setToast({ open: true, message: "Đổi ảnh đại diện thành công!", severity: "success" });
+        setShowAvatarModal(false);
+      }
     } catch (error) {
-      console.error("Lỗi lấy thông tin:", error);
-      setToast({ open: true, message: "Không thể tải thông tin hồ sơ", severity: "error" });
-    } finally {
-      setLoading(false);
+      console.error("Lỗi upload:", error);
+      setToast({ open: true, message: "Lỗi upload ảnh.", severity: "error" });
     }
   };
 
-  // Xử lý thay đổi input
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  // 2. Xử lý Lưu (Update)
-  const handleSubmit = async () => {
-    if (!userId) return;
-    const token = localStorage.getItem("token");
-    
+  // --- 3. LƯU THÔNG TIN ---
+  const handleSave = async () => {
     try {
       setUpdating(true);
-      
+      const decoded = jwtDecode(token);
+      const userId = decoded.sub || decoded.uid;
+
       const payload = {
         fname: formData.fname,
+        mname: formData.mname,
         lname: formData.lname,
         school: formData.school,
         dob: formData.dob ? new Date(formData.dob).toISOString() : null,
       };
 
-      await updateUser(userId, payload, token);
-      
-      setToast({ open: true, message: "🎉 Cập nhật hồ sơ thành công!", severity: "success" });
+      await axios.patch(`${API_URL}/users/${userId}`, payload, getAuthConfig());
+
+      // [QUAN TRỌNG]: Khi lưu thành công, mới cập nhật giao diện hiển thị bên trái
+      setSavedUser(prev => ({
+        ...prev,
+        fname: formData.fname,
+        mname: formData.mname,
+        lname: formData.lname,
+        student: { ...prev.student, school: formData.school, dob: formData.dob } // Update nested nếu cần
+      }));
+
+      setToast({ open: true, message: "Cập nhật hồ sơ thành công!", severity: "success" });
     } catch (error) {
-      console.error("Lỗi cập nhật:", error);
-      setToast({ open: true, message: "Cập nhật thất bại. Vui lòng thử lại.", severity: "error" });
+      console.error("Lỗi lưu:", error);
+      setToast({ open: true, message: "Cập nhật thất bại.", severity: "error" });
     } finally {
       setUpdating(false);
     }
   };
 
-  // Loading View
+  const handleCloseToast = () => setToast({ ...toast, open: false });
+
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "80vh" }}>
-        <CircularProgress size={60} thickness={4} color="primary" />
-      </Box>
+      <div className="profile-container" style={{ alignItems: "center" }}>
+        <CircularProgress />
+      </div>
     );
   }
 
-  return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 8 }}>
-      <Fade in={true} timeout={800}>
-        <Box>
-          {/* Header Section */}
-          <Box sx={{ mb: 4, textAlign: { xs: "center", md: "left" } }}>
-            <Typography variant="h4" fontWeight="800" sx={{ background: "linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              Hồ Sơ Cá Nhân
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-              Quản lý thông tin tài khoản và cập nhật hồ sơ học tập của bạn
-            </Typography>
-          </Box>
+  const displayAvatar = savedUser.avata_url || "https://via.placeholder.com/150";
 
-          <Grid container spacing={4}>
-            {/* Cột Trái: Card Profile */}
-            <Grid item xs={12} md={4}>
-              <Paper
-                elevation={3}
-                sx={{
-                  p: 0,
-                  borderRadius: 4,
-                  overflow: "hidden",
-                  textAlign: "center",
-                  height: "100%",
-                  position: "relative"
-                }}
-              >
-                {/* Background trang trí */}
-                <Box
-                  sx={{
-                    height: 140,
-                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+  return (
+    <div className="profile-container">
+      <div className="profile-content">
+        
+        {/* === CỘT TRÁI: HIỂN THỊ THÔNG TIN (Dùng savedUser) === */}
+        <div className="left-panel card">
+          <div className="avatar-wrapper">
+            <img
+              src={displayAvatar}
+              alt="Avatar"
+              className="avatar-img"
+              onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }}
+            />
+            <button className="camera-btn" onClick={() => setShowAvatarModal(true)}>
+              <CameraAlt fontSize="small" />
+            </button>
+          </div>
+
+          {/* Sửa: Hiển thị đủ 3 thành phần tên */}
+          <h2 className="user-fullname">
+            {savedUser.lname} {savedUser.mname} {savedUser.fname}
+          </h2>
+          <span className="user-role">{savedUser.role || "HỌC SINH"}</span>
+
+          <div className="basic-info">
+            <div className="info-item">
+              <Email fontSize="small" /> {savedUser.email}
+            </div>
+            {savedUser.createAt && (
+              <div className="info-item">
+                <CalendarToday fontSize="small" />
+                Tham gia: {new Date(savedUser.createAt).toLocaleDateString("vi-VN")}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* === CỘT PHẢI: FORM CHỈNH SỬA (Dùng formData) === */}
+        <div className="right-panel card">
+          <div className="panel-header">
+            <h3>Thông Tin Cá Nhân</h3>
+            <p>Quản lý và cập nhật thông tin hồ sơ của bạn</p>
+          </div>
+
+          <div className="form-grid">
+            <div className="form-group">
+              <label>Họ (Last Name)</label>
+              <input
+                type="text"
+                name="lname"
+                value={formData.lname}
+                onChange={handleInputChange}
+                placeholder="Nhập họ..."
+              />
+            </div>
+            <div className="form-group">
+              <label>Tên đệm (Middle Name)</label>
+              <input
+                type="text"
+                name="mname"
+                value={formData.mname}
+                onChange={handleInputChange}
+                placeholder="Nhập tên đệm..."
+              />
+            </div>
+            <div className="form-group full-width-mobile">
+              <label>Tên (First Name)</label>
+              <input
+                type="text"
+                name="fname"
+                value={formData.fname}
+                onChange={handleInputChange}
+                placeholder="Nhập tên..."
+              />
+            </div>
+
+            <div className="form-group full-width">
+              <label>Email (Không thể thay đổi)</label>
+              <input type="email" value={savedUser.email || ""} disabled className="input-disabled" />
+            </div>
+
+            <div className="form-group">
+              <label>Tên đăng nhập</label>
+              <input type="text" value={savedUser.username || ""} disabled className="input-disabled" />
+            </div>
+
+            <div className="form-group">
+              <label>Ngày sinh</label>
+              <input
+                type="date"
+                name="dob"
+                value={formData.dob}
+                onChange={handleInputChange}
+              />
+            </div>
+
+            <div className="form-group full-width">
+              <label>Trường học</label>
+              <div style={{ position: "relative" }}>
+                <input
+                  type="text"
+                  name="school"
+                  value={formData.school}
+                  onChange={handleInputChange}
+                  placeholder="Nhập tên trường học..."
+                  style={{ paddingLeft: "40px" }}
+                />
+                <SchoolIcon
+                  style={{
+                    position: "absolute",
+                    left: "12px",
+                    top: "12px",
+                    color: "#9ca3af",
+                    fontSize: "20px",
                   }}
                 />
-                
-                {/* Avatar */}
-                <Box sx={{ mt: -7, display: "flex", justifyContent: "center", position: "relative" }}>
-                  <Box sx={{ position: "relative" }}>
-                    <Avatar
-                      sx={{
-                        width: 120,
-                        height: 120,
-                        border: "4px solid white",
-                        boxShadow: "0 4px 14px rgba(0,0,0,0.2)",
-                        fontSize: "3rem",
-                        bgcolor: "primary.main"
-                      }}
-                    >
-                      {formData.fname?.charAt(0).toUpperCase()}
-                    </Avatar>
-                    {/* Nút sửa ảnh (Mock UI) */}
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        bottom: 5,
-                        right: 5,
-                        bgcolor: "white",
-                        borderRadius: "50%",
-                        p: 0.5,
-                        boxShadow: 1,
-                        cursor: "pointer",
-                        "&:hover": { bgcolor: "#f5f5f5" }
-                      }}
-                    >
-                      <CameraIcon color="primary" fontSize="small" />
-                    </Box>
-                  </Box>
-                </Box>
+              </div>
+            </div>
+          </div>
 
-                <Box sx={{ p: 3 }}>
-                  <Typography variant="h5" fontWeight="bold" gutterBottom>
-                    {formData.lname} {formData.fname}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    @{formData.username}
-                  </Typography>
-                  <Stack direction="row" justifyContent="center" spacing={1} sx={{ mt: 2 }}>
-                    <Button variant="outlined" size="small" startIcon={<BadgeIcon />}>
-                      Học sinh
-                    </Button>
-                  </Stack>
-                  
-                  <Divider sx={{ my: 3 }} />
-                  
-                  <Box sx={{ textAlign: "left" }}>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                      Thông tin liên hệ
-                    </Typography>
-                    <Stack direction="row" alignItems="center" spacing={2} sx={{ mt: 1, p: 1.5, bgcolor: "grey.50", borderRadius: 2 }}>
-                      <EmailIcon color="action" fontSize="small" />
-                      <Typography variant="body2" noWrap title={formData.email}>
-                        {formData.email}
-                      </Typography>
-                    </Stack>
-                  </Box>
-                </Box>
-              </Paper>
-            </Grid>
+          <div className="action-buttons">
+            <button className="btn-save" onClick={handleSave} disabled={updating}>
+              {updating ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                <Save fontSize="small" />
+              )}
+              {updating ? " Đang lưu..." : " Lưu Thay Đổi"}
+            </button>
+          </div>
+        </div>
+      </div>
 
-            {/* Cột Phải: Form Chỉnh Sửa */}
-            <Grid item xs={12} md={8}>
-              <Paper elevation={3} sx={{ p: 4, borderRadius: 4 }}>
-                <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
-                  <Avatar sx={{ bgcolor: "primary.light", color: "primary.main" }}>
-                    <EditIcon />
-                  </Avatar>
-                  <Typography variant="h6" fontWeight="bold">
-                    Cập nhật thông tin
-                  </Typography>
-                </Stack>
+      {/* === MODAL UPLOAD ẢNH (Đã cải tiến) === */}
+      {showAvatarModal && (
+        <div className="modal-overlay" onClick={() => setShowAvatarModal(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <h3>Thay Đổi Ảnh Đại Diện</h3>
+            
+            {/* Khu vực thông tin hướng dẫn */}
+            <div style={{ 
+                margin: '20px 0', 
+                padding: '15px', 
+                backgroundColor: '#f8fafc', 
+                borderRadius: '8px',
+                textAlign: 'left',
+                border: '1px dashed #cbd5e1'
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#334155', fontWeight: 600 }}>
+                    <InfoOutlined fontSize="small" color="primary"/> Lưu ý khi tải ảnh:
+                </div>
+                <ul style={{ margin: 0, paddingLeft: '20px', color: '#64748b', fontSize: '0.9rem' }}>
+                    <li>Định dạng hỗ trợ: <strong>JPEG, PNG</strong></li>
+                    <li>Dung lượng tối đa: <strong>5MB</strong></li>
+                    <li>Nên dùng ảnh vuông để hiển thị đẹp nhất.</li>
+                </ul>
+            </div>
 
-                <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Họ & Tên đệm"
-                      name="lname"
-                      value={formData.lname}
-                      onChange={handleChange}
-                      variant="outlined"
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <PersonIcon color="action" />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Tên"
-                      name="fname"
-                      value={formData.fname}
-                      onChange={handleChange}
-                      variant="outlined"
-                    />
-                  </Grid>
+            <div className="modal-actions">
+              <label htmlFor="file-upload" className="btn-upload" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <CloudUpload fontSize="small"/> Chọn ảnh từ máy tính
+              </label>
+              <input
+                id="file-upload"
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={handleFileChange}
+              />
 
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Trường học"
-                      name="school"
-                      value={formData.school}
-                      onChange={handleChange}
-                      placeholder="Nhập tên trường học của bạn"
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <SchoolIcon color="action" />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  </Grid>
+              <button className="btn-close" onClick={() => setShowAvatarModal(false)}>
+                Hủy bỏ
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Ngày sinh"
-                      name="dob"
-                      type="date"
-                      value={formData.dob}
-                      onChange={handleChange}
-                      InputLabelProps={{ shrink: true }}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <CakeIcon color="action" />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  </Grid>
-
-                  <Grid item xs={12} sm={6}>
-                    <TextField
-                      fullWidth
-                      label="Email (Không thể thay đổi)"
-                      value={formData.email}
-                      disabled
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <EmailIcon color="disabled" />
-                          </InputAdornment>
-                        ),
-                      }}
-                      sx={{ bgcolor: "grey.50" }}
-                    />
-                  </Grid>
-
-                  <Grid item xs={12} sx={{ mt: 2 }}>
-                    <Stack direction="row" spacing={2} justifyContent="flex-end">
-                      <Button variant="outlined" color="inherit" size="large">
-                        Hủy bỏ
-                      </Button>
-                      <Button
-                        variant="contained"
-                        size="large"
-                        onClick={handleSubmit}
-                        disabled={updating}
-                        startIcon={updating ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-                        sx={{ 
-                          px: 4, 
-                          borderRadius: 3,
-                          textTransform: "none",
-                          fontSize: "1rem",
-                          boxShadow: "0 4px 12px rgba(33, 150, 243, 0.3)"
-                        }}
-                      >
-                        {updating ? "Đang lưu..." : "Lưu thay đổi"}
-                      </Button>
-                    </Stack>
-                  </Grid>
-                </Grid>
-              </Paper>
-            </Grid>
-          </Grid>
-        </Box>
-      </Fade>
-
-      {/* Thông báo Toast */}
+      {/* TOAST THÔNG BÁO */}
       <Snackbar
         open={toast.open}
-        autoHideDuration={4000}
-        onClose={() => setToast({ ...toast, open: false })}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        autoHideDuration={3000}
+        onClose={handleCloseToast}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
       >
-        <Alert
-          onClose={() => setToast({ ...toast, open: false })}
-          severity={toast.severity}
-          variant="filled"
-          sx={{ width: "100%", boxShadow: 3 }}
-        >
+        <Alert onClose={handleCloseToast} severity={toast.severity} sx={{ width: "100%", boxShadow: 3 }}>
           {toast.message}
         </Alert>
       </Snackbar>
-    </Container>
+    </div>
   );
 };
 
